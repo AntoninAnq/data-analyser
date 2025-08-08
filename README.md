@@ -1,10 +1,9 @@
-# Data Analyzer with CrewAI
+# Data Analyzer 
 
-A flexible data analysis system using CrewAI that supports both hardcoded and chat-based approaches for dataset analysis.
+A flexible data analysis system using chat-based approaches for dataset analysis.
 
 ## Features
 
-- **Hardcoded Analysis**: Traditional approach with predefined analysis tasks
 - **Chat-Based Analysis**: Dynamic analysis based on user queries
 - **Interactive Chat**: Real-time conversation with the data analysis agent
 - **Markdown Output**: Well-formatted, readable analysis results
@@ -26,15 +25,7 @@ ollama run qwen3:8b
 
 ## Usage
 
-### 1. Hardcoded Analysis (Original Approach)
-
-Run a predefined analysis on your dataset:
-
-```bash
-poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv
-```
-
-### 2. Chat-Based Analysis (New Approach)
+### 1. Chat-Based Analysis 
 
 Ask specific questions about your dataset:
 
@@ -105,7 +96,6 @@ poetry run python test_refactored_tools.py
   - `tools/dataset_summary.py` - Dataset analysis tools
   - `tools/column_analysis.py` - Column-specific analysis tools
   - `tools/utils.py` - Shared utilities for data handling
-- **Crew**: `crew.py` - Hardcoded crew setup
 - **Chat**: `chat_main.py` - Chat-based analysis interface
 
 ### Key Improvements
@@ -164,7 +154,6 @@ data-analyser/
 │   └── utils.py              # Shared utilities
 ├── dataset/
 │   └── DD_EEC_ANNUEL_2024_data.csv
-├── crew.py                    # Hardcoded crew setup
 ├── chat_main.py              # Chat-based analysis
 ├── main.py                   # Main entry point
 ├── tests/
