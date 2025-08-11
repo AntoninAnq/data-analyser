@@ -28,7 +28,7 @@ def test_create_data_agent(mock_agent_class, mock_llm):
     call_args = mock_agent_class.call_args
     assert call_args[1]['role'] == 'Data Analysis Assistant'
     assert 'data analyst' in call_args[1]['backstory'].lower()
-    assert len(call_args[1]['tools']) == 2  # dataset_summary_tool and column_unique_values_tool
+    assert len(call_args[1]['tools']) == 5  # dataset_summary_tool, column_unique_values_tool, and 3 statistical tools
     assert call_args[1]['verbose'] is True
     assert call_args[1]['allow_delegation'] is False
     assert call_args[1]['memory'] is True
