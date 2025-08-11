@@ -7,7 +7,7 @@ This avoids calling real LLMs and makes tests fast and reliable
 import pytest
 from unittest.mock import Mock, patch
 from agents.data_agent import create_data_agent
-from chat_main import analyze_dataset_chat, setup_crew
+from main import analyze_dataset_chat, setup_crew
 
 
 @pytest.mark.unit
@@ -34,38 +34,70 @@ def test_create_data_agent(mock_agent_class, mock_llm):
     assert call_args[1]['memory'] is True
     
 @pytest.mark.integration
-def test_analyze_dataset_chat_success(mock_crew, mock_llm):
-    """Test successful dataset analysis with mocked LLM responses"""
+@patch('main.Crew')
+@patch('main.LLM')
+@patch('tasks.data_tasks.Task')
+def test_analyze_dataset_chat_success(mock_task_class, mock_llm_class, mock_crew_class):
+    """Test successful dataset analysis with mocked CrewAI classes"""
     # Arrange
+    # Mock LLM
     mock_llm_instance = Mock()
-    mock_llm.return_value = mock_llm_instance
+    mock_llm_instance.supports_stop_words.return_value = True
+    mock_llm_instance.llm_type = "mock"
+    mock_llm_class.return_value = mock_llm_instance
     
-    mock_crew_instance = Mock()
-    mock_crew.return_value = mock_crew_instance
-    mock_crew_instance.kickoff.return_value = "Mocked analysis result"
-    
-    # Act
-    result = analyze_dataset_chat("What are the data types?", "test_dataset.csv")
-    
-    # Assert
-    assert result == "Mocked analysis result"
-    mock_crew_instance.kickoff.assert_called_once_with(inputs={'file_path': 'test_dataset.csv'})
+    # Mock Agent (this will be called by create_data_agent)
+    with patch('agents.data_agent.Agent') as mock_agent_class:
+        mock_agent_instance = Mock()
+        mock_agent_class.return_value = mock_agent_instance
+        
+        # Mock Task
+        mock_task_instance = Mock()
+        mock_task_class.return_value = mock_task_instance
+        
+        # Mock Crew
+        mock_crew_instance = Mock()
+        mock_crew_class.return_value = mock_crew_instance
+        mock_crew_instance.kickoff.return_value = "Mocked analysis result"
+        
+        # Act
+        result = analyze_dataset_chat("What are the data types?", "test_dataset.csv")
+        
+        # Assert
+        assert result == "Mocked analysis result"
+        mock_crew_instance.kickoff.assert_called_once_with(inputs={'file_path': 'test_dataset.csv'})
 
 
 @pytest.mark.integration
-def test_analyze_dataset_chat_error_handling(mock_crew, mock_llm):
+@patch('main.Crew')
+@patch('main.LLM')
+@patch('tasks.data_tasks.Task')
+def test_analyze_dataset_chat_error_handling(mock_task_class, mock_llm_class, mock_crew_class):
     """Test error handling when LLM calls fail"""
     # Arrange
+    # Mock LLM
     mock_llm_instance = Mock()
-    mock_llm.return_value = mock_llm_instance
+    mock_llm_instance.supports_stop_words.return_value = True
+    mock_llm_instance.llm_type = "mock"
+    mock_llm_class.return_value = mock_llm_instance
     
-    mock_crew_instance = Mock()
-    mock_crew.return_value = mock_crew_instance
-    mock_crew_instance.kickoff.side_effect = Exception("LLM API error")
-    
-    # Act & Assert
-    with pytest.raises(Exception, match="LLM API error"):
-        analyze_dataset_chat("What are the data types?", "test_dataset.csv")
+    # Mock Agent
+    with patch('agents.data_agent.Agent') as mock_agent_class:
+        mock_agent_instance = Mock()
+        mock_agent_class.return_value = mock_agent_instance
+        
+        # Mock Task
+        mock_task_instance = Mock()
+        mock_task_class.return_value = mock_task_instance
+        
+        # Mock Crew with error
+        mock_crew_instance = Mock()
+        mock_crew_class.return_value = mock_crew_instance
+        mock_crew_instance.kickoff.side_effect = Exception("LLM API error")
+        
+        # Act & Assert
+        with pytest.raises(Exception, match="LLM API error"):
+            analyze_dataset_chat("What are the data types?", "test_dataset.csv")
 
 
 @pytest.mark.unit
@@ -96,11 +128,13 @@ def test_column_analysis_tool_integration(mock_column_analysis_tool):
 
 @pytest.mark.unit
 @patch('agents.data_agent.Agent')
-@patch('chat_main.LLM')
+@patch('main.LLM')
 def test_setup_crew_returns_correct_components(mock_llm_class, mock_agent_class):
     """Test that setup_crew returns expected components"""
     # Arrange
     mock_llm_instance = Mock()
+    mock_llm_instance.supports_stop_words.return_value = True
+    mock_llm_instance.llm_type = "mock"
     mock_llm_class.return_value = mock_llm_instance
     mock_agent = Mock()
     mock_agent_class.return_value = mock_agent
@@ -126,21 +160,37 @@ def test_setup_crew_returns_correct_components(mock_llm_class, mock_agent_class)
     "Analysis complete. Found 3 missing values in column 'AGE'.",
     "The SEX column has 2 unique values: M (60%) and F (40%)."
 ])
-def test_mocked_successful_analysis(mock_crew, mock_llm, response):
+@patch('main.Crew')
+@patch('main.LLM')
+@patch('tasks.data_tasks.Task')
+def test_mocked_successful_analysis(mock_task_class, mock_llm_class, mock_crew_class, response):
     """Test with mocked successful analysis response"""
     # Arrange
+    # Mock LLM
     mock_llm_instance = Mock()
-    mock_llm.return_value = mock_llm_instance
+    mock_llm_instance.supports_stop_words.return_value = True
+    mock_llm_instance.llm_type = "mock"
+    mock_llm_class.return_value = mock_llm_instance
     
-    mock_crew_instance = Mock()
-    mock_crew.return_value = mock_crew_instance
-    mock_crew_instance.kickoff.return_value = response
-    
-    # Act
-    result = analyze_dataset_chat("Test query", "test.csv")
-    
-    # Assert
-    assert result == response
+    # Mock Agent
+    with patch('agents.data_agent.Agent') as mock_agent_class:
+        mock_agent_instance = Mock()
+        mock_agent_class.return_value = mock_agent_instance
+        
+        # Mock Task
+        mock_task_instance = Mock()
+        mock_task_class.return_value = mock_task_instance
+        
+        # Mock Crew
+        mock_crew_instance = Mock()
+        mock_crew_class.return_value = mock_crew_instance
+        mock_crew_instance.kickoff.return_value = response
+        
+        # Act
+        result = analyze_dataset_chat("Test query", "test.csv")
+        
+        # Assert
+        assert result == response
 
 
 @pytest.mark.integration
@@ -150,31 +200,68 @@ def test_mocked_successful_analysis(mock_crew, mock_llm, response):
     Exception("Network timeout"),
     Exception("Model not available")
 ])
-def test_mocked_error_responses(mock_crew, mock_llm, error):
+@patch('main.Crew')
+@patch('main.LLM')
+@patch('tasks.data_tasks.Task')
+def test_mocked_error_responses(mock_task_class, mock_llm_class, mock_crew_class, error):
     """Test with mocked error responses"""
     # Arrange
+    # Mock LLM
     mock_llm_instance = Mock()
-    mock_llm.return_value = mock_llm_instance
+    mock_llm_instance.supports_stop_words.return_value = True
+    mock_llm_instance.llm_type = "mock"
+    mock_llm_class.return_value = mock_llm_instance
     
-    mock_crew_instance = Mock()
-    mock_crew.return_value = mock_crew_instance
-    mock_crew_instance.kickoff.side_effect = error
-    
-    # Act & Assert
-    with pytest.raises(Exception):
-        analyze_dataset_chat("Test query", "test.csv")
+    # Mock Agent
+    with patch('agents.data_agent.Agent') as mock_agent_class:
+        mock_agent_instance = Mock()
+        mock_agent_class.return_value = mock_agent_instance
+        
+        # Mock Task
+        mock_task_instance = Mock()
+        mock_task_class.return_value = mock_task_instance
+        
+        # Mock Crew with error
+        mock_crew_instance = Mock()
+        mock_crew_class.return_value = mock_crew_instance
+        mock_crew_instance.kickoff.side_effect = error
+        
+        # Act & Assert
+        with pytest.raises(Exception):
+            analyze_dataset_chat("Test query", "test.csv")
 
 
 # Integration test with fixtures
 @pytest.mark.integration
-def test_integration_with_fixtures(mock_llm, mock_crew):
+@patch('main.Crew')
+@patch('main.LLM')
+@patch('tasks.data_tasks.Task')
+def test_integration_with_fixtures(mock_task_class, mock_llm_class, mock_crew_class):
     """Integration test using fixtures"""
     # Arrange
-    mock_crew.kickoff.return_value = "Integration test result"
+    # Mock LLM
+    mock_llm_instance = Mock()
+    mock_llm_instance.supports_stop_words.return_value = True
+    mock_llm_instance.llm_type = "mock"
+    mock_llm_class.return_value = mock_llm_instance
     
-    # Act
-    result = analyze_dataset_chat("Integration test query", "test.csv")
-    
-    # Assert
-    assert result == "Integration test result"
-    mock_crew.kickoff.assert_called_once()
+    # Mock Agent
+    with patch('agents.data_agent.Agent') as mock_agent_class:
+        mock_agent_instance = Mock()
+        mock_agent_class.return_value = mock_agent_instance
+        
+        # Mock Task
+        mock_task_instance = Mock()
+        mock_task_class.return_value = mock_task_instance
+        
+        # Mock Crew
+        mock_crew_instance = Mock()
+        mock_crew_class.return_value = mock_crew_instance
+        mock_crew_instance.kickoff.return_value = "Integration test result"
+        
+        # Act
+        result = analyze_dataset_chat("Integration test query", "test.csv")
+        
+        # Assert
+        assert result == "Integration test result"
+        mock_crew_instance.kickoff.assert_called_once()

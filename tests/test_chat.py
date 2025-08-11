@@ -3,9 +3,11 @@
 Test script for the chat-based data analysis approach
 """
 
-from chat_main import analyze_dataset_chat
+import pytest
+from main import analyze_dataset_chat
 
 #Test should be mocked
+@pytest.mark.skip(reason="Full working test using llm for queries. Long to run")
 def test_chat_analysis():
     """Test the chat-based analysis with different queries"""
     

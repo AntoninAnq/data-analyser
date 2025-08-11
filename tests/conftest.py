@@ -27,41 +27,47 @@ def mock_llm_response():
 
 
 @pytest.fixture
-def mock_crew_setup():
-    """Fixture for mocking crew setup"""
-    with patch('chat_main.LLM') as mock_llm, \
-         patch('chat_main.Crew') as mock_crew:
-        
-        mock_llm_instance = Mock()
-        mock_llm.return_value = mock_llm_instance
-        
-        mock_crew_instance = Mock()
-        mock_crew.return_value = mock_crew_instance
-        
-        yield {
-            'llm': mock_llm_instance,
-            'crew': mock_crew_instance,
-            'mock_llm_class': mock_llm,
-            'mock_crew_class': mock_crew
-        }
-
-
-@pytest.fixture
 def mock_llm():
-    """Fixture for mocked LLM"""
-    with patch('chat_main.LLM') as mock:
-        mock_instance = Mock()
-        mock.return_value = mock_instance
-        yield mock_instance
+    """Fixture for mocked LLM with proper attributes"""
+    with patch('main.LLM') as mock_llm_class:
+        mock_llm_instance = Mock()
+        # Add required methods that CrewAI expects
+        mock_llm_instance.supports_stop_words.return_value = True
+        mock_llm_instance.llm_type = "mock"
+        mock_llm_class.return_value = mock_llm_instance
+        yield mock_llm_instance
 
 
 @pytest.fixture
 def mock_crew():
     """Fixture for mocked Crew"""
-    with patch('chat_main.Crew') as mock:
-        mock_instance = Mock()
-        mock.return_value = mock_instance
-        yield mock_instance
+    with patch('main.Crew') as mock_crew_class:
+        mock_crew_instance = Mock()
+        mock_crew_class.return_value = mock_crew_instance
+        yield mock_crew_instance
+
+
+@pytest.fixture
+def mock_crew_setup():
+    """Fixture for mocking crew setup with proper LLM mocking"""
+    with patch('main.LLM') as mock_llm_class, \
+         patch('main.Crew') as mock_crew_class:
+        
+        # Create a proper mock LLM instance with required attributes
+        mock_llm_instance = Mock()
+        mock_llm_instance.supports_stop_words.return_value = True
+        mock_llm_instance.llm_type = "mock"
+        mock_llm_class.return_value = mock_llm_instance
+        
+        mock_crew_instance = Mock()
+        mock_crew_class.return_value = mock_crew_instance
+        
+        yield {
+            'llm': mock_llm_instance,
+            'crew': mock_crew_instance,
+            'mock_llm_class': mock_llm_class,
+            'mock_crew_class': mock_crew_class
+        }
 
 
 @pytest.fixture
@@ -91,6 +97,16 @@ def temp_test_file():
     os.unlink(temp_path)
 
 
+# Mock benchmark fixture for tests that use pytest-benchmark
+@pytest.fixture
+def benchmark():
+    """Mock benchmark fixture for tests that don't have pytest-benchmark installed"""
+    class MockBenchmark:
+        def __call__(self, func, *args, **kwargs):
+            return func(*args, **kwargs)
+    return MockBenchmark()
+
+
 # Test markers for different test categories
 def pytest_configure(config):
     """Configure custom markers"""
@@ -108,6 +124,9 @@ def pytest_configure(config):
     )
     config.addinivalue_line(
         "markers", "performance: mark test as performance test"
+    )
+    config.addinivalue_line(
+        "markers", "benchmark: mark test as benchmark test"
     )
 
 
