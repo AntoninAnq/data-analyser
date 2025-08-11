@@ -48,7 +48,7 @@ poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "Analyze the AGE c
 Start an interactive conversation with the data analysis agent:
 
 ```bash
-poetry run python chat_main.py
+poetry run python main.py
 ```
 
 Then ask questions like:
@@ -96,7 +96,7 @@ poetry run python test_refactored_tools.py
   - `tools/dataset_summary.py` - Dataset analysis tools
   - `tools/column_analysis.py` - Column-specific analysis tools
   - `tools/utils.py` - Shared utilities for data handling
-- **Chat**: `chat_main.py` - Chat-based analysis interface
+- **Chat**: `main.py` - Chat-based analysis interface
 
 ### Key Improvements
 
@@ -154,7 +154,7 @@ data-analyser/
 │   └── utils.py              # Shared utilities
 ├── dataset/
 │   └── DD_EEC_ANNUEL_2024_data.csv
-├── chat_main.py              # Chat-based analysis
+├── main.py              # Chat-based analysis
 ├── main.py                   # Main entry point
 ├── tests/
 │   └── *.py          # Test scripts
