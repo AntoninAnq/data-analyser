@@ -22,6 +22,6 @@ def create_data_agent(llm=None):
         ],
         llm=llm,
         verbose=True,
-        allow_delegation=False,
+        allow_delegation=True,
         memory=True
     )

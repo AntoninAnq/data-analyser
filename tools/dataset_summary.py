@@ -1,5 +1,4 @@
 from crewai.tools import tool
-import pandas as pd
 from .utils import load_dataset, get_dataset_info
 
 @tool("Describe a dataset with types, missing values, and basic stats")

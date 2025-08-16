@@ -33,7 +33,21 @@ def create_chat_data_task(agent, user_query: str, file_path: str):
         If they ask for specific information about a column's unique values, use the column_unique_values_tool.
         If they ask for statistical measures like mean, standard deviation, or distribution analysis, use the appropriate statistical tools.
         If they ask for specific information, focus on that aspect.
-        If you are missing a dedicated tool to answer, tell the user what tool is missing.""",
+        
+        **IMPORTANT**: If the user asks for visualizations, plots, charts, or graphs, you should delegate this task to the "Data Visualization Specialist" agent who has the appropriate tools for creating plots and charts. When delegating, specify the exact task and provide the file path and column name if needed. Do not attempt to create visualizations yourself - delegate to the expert.
+        
+        **SPECIFIC DELEGATION RULES**:
+        - If they ask about "correlations" or "relationships between columns" → Delegate to create a correlation heatmap
+        - If they ask about "distributions" → Delegate to create distribution plots
+        - If they ask about "patterns" or "trends" → Delegate to create appropriate visualizations
+        - If they ask for any type of "plot", "graph", "chart", or "visualization" → Delegate to the visualizer
+        
+        **DELEGATION FORMAT**: When delegating, provide:
+        - Task: The specific visualization task (e.g., "create a correlation heatmap")
+        - Context: File path and any specific columns or parameters needed
+        - Coworker: "Data Visualization Specialist"
+        
+        **IMPORTANT**: Keep delegation messages concise to avoid truncation. Include only essential information.""",
         expected_output=f"A detailed response addressing: {user_query}",
         agent=agent,
         inputs={

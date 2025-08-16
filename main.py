@@ -1,4 +1,4 @@
-from crewai import Crew, LLM
+from crewai import Crew, LLM, Process
 from agents.data_agent import create_data_agent
 from agents.visualizer_agent import create_visualizer_agent
 from tasks.data_tasks import create_chat_data_task
@@ -29,6 +29,7 @@ def analyze_dataset_chat(user_query: str, file_path: str = "dataset/DD_EEC_ANNUE
     llm, data_agent, visualizer_agent = setup_crew()
     
     # Create dynamic task based on user query
+    # The task can be delegated to either agent based on the content
     chat_task = create_chat_data_task(data_agent, user_query, file_path)
     
     # Create crew with both agents - they can collaborate and delegate tasks
@@ -36,7 +37,8 @@ def analyze_dataset_chat(user_query: str, file_path: str = "dataset/DD_EEC_ANNUE
         agents=[data_agent, visualizer_agent],
         tasks=[chat_task],
         llm=llm,
-        verbose=True
+        verbose=True,
+        process=Process.sequential  # Ensure proper delegation flow
     )
     
     # Execute the task with the file_path as input
@@ -73,21 +75,21 @@ def interactive_chat():
         print("\n" + "="*50 + "\n")
 
 if __name__ == "__main__":
-    # Example usage
-    print("Example 1: General dataset description")
-    result1 = analyze_dataset_chat("Give me a general overview of this dataset")
-    print(result1)
-    print("\n" + "="*50 + "\n")
+    # # Example usage
+    # print("Example 1: General dataset description")
+    # result1 = analyze_dataset_chat("Give me a general overview of this dataset")
+    # print(result1)
+    # print("\n" + "="*50 + "\n")
     
-    print("Example 2: Specific question")
-    result2 = analyze_dataset_chat("What are the data types of the columns?")
-    print(result2)
-    print("\n" + "="*50 + "\n")
+    # print("Example 2: Specific question")
+    # result2 = analyze_dataset_chat("What are the data types of the columns?")
+    # print(result2)
+    # print("\n" + "="*50 + "\n")
     
-    print("Example 3: Visualization request")
-    result3 = analyze_dataset_chat("Create a correlation heatmap for all numerical columns")
-    print(result3)
-    print("\n" + "="*50 + "\n")
+    # print("Example 3: Visualization request")
+    # result3 = analyze_dataset_chat("Create a correlation heatmap for all numerical columns")
+    # print(result3)
+    # print("\n" + "="*50 + "\n")
     
     print("Example 4: Interactive mode")
     interactive_chat() 

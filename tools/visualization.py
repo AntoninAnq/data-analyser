@@ -1,11 +1,12 @@
-import pandas as pd
+from crewai.tools import tool
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from typing import Union, List, Optional
+from typing import Optional
 import os
 from datetime import datetime
 from .utils import load_dataset, validate_column_exists
+import pandas as pd
 
 # Set style for better-looking plots
 plt.style.use('seaborn-v0_8')
@@ -32,7 +33,18 @@ def save_plot(plot, filename: str, plot_dir: str = "plots") -> str:
     
     return filepath
 
+@tool("Create a distribution plot for a specific column.")
 def distribution_plot_tool(file_path: str, column_name: str) -> str:
+    """
+    Tool for creating a distribution plot for a specific column.
+    
+    Args:
+        file_path (str): Path to the dataset file
+        column_name (str): Name of the column to plot
+    """
+    return distribution_plot(file_path, column_name)
+
+def distribution_plot(file_path: str, column_name: str) -> str:
     """
     Create a distribution plot for a specific column.
     
@@ -59,6 +71,18 @@ def distribution_plot_tool(file_path: str, column_name: str) -> str:
         
         if len(column_data) == 0:
             return f"❌ **Error**: Column '{column_name}' contains only missing values."
+        
+        # Check if column has sufficient variation
+        if column_data.nunique() <= 1:
+            return f"❌ **Error**: Column '{column_name}' has no variation (all values are the same). Cannot create a meaningful distribution plot."
+        
+        # Check if column is numeric for distribution analysis
+        if not pd.api.types.is_numeric_dtype(column_data):
+            return f"❌ **Error**: Column '{column_name}' is not numeric. For categorical data, use a bar plot instead."
+        
+        # Check for sufficient data points
+        if len(column_data) < 3:
+            return f"❌ **Error**: Insufficient data in column '{column_name}' for distribution analysis (need at least 3 data points)."
         
         # Create plot
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
@@ -87,7 +111,18 @@ def distribution_plot_tool(file_path: str, column_name: str) -> str:
     except Exception as e:
         return f"❌ **Error creating distribution plot**: {e}"
 
+@tool("Create a correlation heatmap for numerical columns.")
 def correlation_heatmap_tool(file_path: str, columns: Optional[str] = None) -> str:
+    """
+    Tool for creating a correlation heatmap for numerical columns.
+    
+    Args:
+        file_path (str): Path to the dataset file
+        columns (str, optional): Comma-separated list of columns to include. If None, uses all numerical columns.
+    """
+    return correlation_heatmap(file_path, columns)
+
+def correlation_heatmap(file_path: str, columns: Optional[str] = None) -> str:
     """
     Create a correlation heatmap for numerical columns.
     
@@ -122,14 +157,38 @@ def correlation_heatmap_tool(file_path: str, columns: Optional[str] = None) -> s
         if len(numerical_df.columns) < 2:
             return "❌ **Error**: At least 2 numerical columns are required for correlation analysis."
         
+        # Check for sufficient data variation
+        if len(numerical_df) < 3:
+            return "❌ **Error**: Insufficient data for correlation analysis (need at least 3 rows)."
+        
         # Calculate correlation matrix
         corr_matrix = numerical_df.corr()
+        
+        # Check if correlation matrix is valid (not all NaN)
+        if corr_matrix.isnull().all().all():
+            return "❌ **Error**: Cannot calculate correlations - all values are NaN or constant."
+        
+        # Check if correlation matrix has any valid values
+        if corr_matrix.isnull().all().all() or (corr_matrix == 0).all().all():
+            return "❌ **Error**: No meaningful correlations found - all correlations are zero or NaN."
+        
+        # Check for constant columns (which cause NaN correlations)
+        constant_columns = []
+        for col in numerical_df.columns:
+            if numerical_df[col].nunique() <= 1:
+                constant_columns.append(col)
+        
+        if constant_columns:
+            return f"❌ **Error**: Cannot create correlation heatmap. The following columns have no variation (constant values): {', '.join(constant_columns)}"
         
         # Create heatmap
         plt.figure(figsize=(12, 10))
         mask = np.triu(np.ones_like(corr_matrix, dtype=bool))
         
-        sns.heatmap(corr_matrix, 
+        # Use a clean correlation matrix (handle any remaining NaN values)
+        corr_matrix_clean = corr_matrix.fillna(0)
+        
+        sns.heatmap(corr_matrix_clean, 
                    mask=mask,
                    annot=True, 
                    cmap='coolwarm', 
@@ -145,15 +204,20 @@ def correlation_heatmap_tool(file_path: str, columns: Optional[str] = None) -> s
         plot_dir = create_plot_directory()
         filepath = save_plot(plt.gcf(), "correlation_heatmap", plot_dir)
         
-        # Find strongest correlations
+        # Find strongest correlations (excluding NaN and zero values)
         corr_pairs = []
         for i in range(len(corr_matrix.columns)):
             for j in range(i+1, len(corr_matrix.columns)):
-                corr_pairs.append((
-                    corr_matrix.columns[i],
-                    corr_matrix.columns[j],
-                    corr_matrix.iloc[i, j]
-                ))
+                corr_value = corr_matrix.iloc[i, j]
+                if not pd.isna(corr_value) and corr_value != 0:
+                    corr_pairs.append((
+                        corr_matrix.columns[i],
+                        corr_matrix.columns[j],
+                        corr_value
+                    ))
+        
+        if not corr_pairs:
+            return "❌ **Error**: No meaningful correlations found between the numerical columns."
         
         corr_pairs.sort(key=lambda x: abs(x[2]), reverse=True)
         top_correlations = corr_pairs[:5]
@@ -167,7 +231,19 @@ def correlation_heatmap_tool(file_path: str, columns: Optional[str] = None) -> s
     except Exception as e:
         return f"❌ **Error creating correlation heatmap**: {e}"
 
+@tool("Create a pair plot for numerical columns.")
 def pair_plot_tool(file_path: str, columns: Optional[str] = None, sample_size: int = 1000) -> str:
+    """
+    Create a pair plot for numerical columns.
+    
+    Args:
+        file_path (str): Path to the dataset file
+        columns (str, optional): Comma-separated list of columns to include. If None, uses all numerical columns.
+        sample_size (int): Number of samples to use for plotting (to avoid overcrowding)
+    """
+    return pair_plot(file_path, columns, sample_size)
+
+def pair_plot(file_path: str, columns: Optional[str] = None, sample_size: int = 1000) -> str:
     """
     Create a pair plot for numerical columns.
     
@@ -226,7 +302,20 @@ def pair_plot_tool(file_path: str, columns: Optional[str] = None, sample_size: i
     except Exception as e:
         return f"❌ **Error creating pair plot**: {e}"
 
+@tool("Create a scatter plot between two columns.")
 def scatter_plot_tool(file_path: str, x_column: str, y_column: str, color_column: Optional[str] = None) -> str:
+    """
+    Tool for creating a scatter plot between two columns.
+    
+    Args:
+        file_path (str): Path to the dataset file
+        x_column (str): Name of the column for x-axis
+        y_column (str): Name of the column for y-axis
+        color_column (str, optional): Name of the column to use for color coding
+    """
+    return scatter_plot(file_path, x_column, y_column, color_column)
+
+def scatter_plot(file_path: str, x_column: str, y_column: str, color_column: Optional[str] = None) -> str:
     """
     Create a scatter plot between two columns.
     
@@ -256,6 +345,11 @@ def scatter_plot_tool(file_path: str, x_column: str, y_column: str, color_column
             if isinstance(column_check, str):
                 return column_check
         
+        # Check if columns are numeric
+        for col in [x_column, y_column]:
+            if not pd.api.types.is_numeric_dtype(df[col]):
+                return f"❌ **Error**: Column '{col}' is not numeric. Scatter plots require numerical data."
+        
         # Get data
         plot_data = df[[x_column, y_column]].dropna()
         if color_column:
@@ -264,6 +358,17 @@ def scatter_plot_tool(file_path: str, x_column: str, y_column: str, color_column
         
         if len(plot_data) == 0:
             return "❌ **Error**: No data available after removing missing values."
+        
+        # Check for sufficient data points
+        if len(plot_data) < 3:
+            return "❌ **Error**: Insufficient data for scatter plot (need at least 3 data points)."
+        
+        # Check for variation in data
+        if plot_data[x_column].nunique() <= 1:
+            return f"❌ **Error**: Column '{x_column}' has no variation (all values are the same). Cannot create a meaningful scatter plot."
+        
+        if plot_data[y_column].nunique() <= 1:
+            return f"❌ **Error**: Column '{y_column}' has no variation (all values are the same). Cannot create a meaningful scatter plot."
         
         # Create plot
         plt.figure(figsize=(12, 8))
@@ -282,10 +387,15 @@ def scatter_plot_tool(file_path: str, x_column: str, y_column: str, color_column
         plt.ylabel(y_column, fontsize=12)
         plt.grid(True, alpha=0.3)
         
-        # Add trend line
-        z = np.polyfit(plot_data[x_column], plot_data[y_column], 1)
-        p = np.poly1d(z)
-        plt.plot(plot_data[x_column], p(plot_data[x_column]), "r--", alpha=0.8, linewidth=2)
+        # Add trend line (only if we have enough data points)
+        if len(plot_data) >= 3:
+            try:
+                z = np.polyfit(plot_data[x_column], plot_data[y_column], 1)
+                p = np.poly1d(z)
+                plt.plot(plot_data[x_column], p(plot_data[x_column]), "r--", alpha=0.8, linewidth=2)
+            except:
+                # If trend line fails, continue without it
+                pass
         
         plt.tight_layout()
         
@@ -301,7 +411,19 @@ def scatter_plot_tool(file_path: str, x_column: str, y_column: str, color_column
     except Exception as e:
         return f"❌ **Error creating scatter plot**: {e}"
 
+@tool("Create a bar plot for categorical or discrete numerical columns.")
 def bar_plot_tool(file_path: str, column_name: str, top_n: int = 10) -> str:
+    """
+    Tool for creating a bar plot for categorical or discrete numerical columns.
+    
+    Args:
+        file_path (str): Path to the dataset file
+        column_name (str): Name of the column to plot
+        top_n (int): Number of top categories to show
+    """
+    return bar_plot(file_path, column_name, top_n)
+
+def bar_plot(file_path: str, column_name: str, top_n: int = 10) -> str:
     """
     Create a bar plot for categorical or discrete numerical columns.
     
@@ -324,17 +446,31 @@ def bar_plot_tool(file_path: str, column_name: str, top_n: int = 10) -> str:
         if isinstance(column_check, str):
             return column_check
         
+        # Get column data
+        column_data = df[column_name].dropna()
+        
+        if len(column_data) == 0:
+            return f"❌ **Error**: Column '{column_name}' contains only missing values."
+        
+        # Check if column has sufficient variation
+        if column_data.nunique() <= 1:
+            return f"❌ **Error**: Column '{column_name}' has no variation (all values are the same). Cannot create a meaningful bar plot."
+        
+        # Check for sufficient data points
+        if len(column_data) < 2:
+            return f"❌ **Error**: Insufficient data in column '{column_name}' for bar plot (need at least 2 data points)."
+        
         # Get value counts
-        value_counts = df[column_name].value_counts().head(top_n)
+        value_counts = column_data.value_counts().head(top_n)
         
         if len(value_counts) == 0:
-            return f"❌ **Error**: Column '{column_name}' contains only missing values."
+            return f"❌ **Error**: No valid data found in column '{column_name}' after processing."
         
         # Create plot
         plt.figure(figsize=(12, 8))
         
         bars = plt.bar(range(len(value_counts)), value_counts.values, alpha=0.7)
-        plt.title(f'Top {top_n} Values in {column_name}', fontsize=14)
+        plt.title(f'Top {len(value_counts)} Values in {column_name}', fontsize=14)
         plt.xlabel(column_name, fontsize=12)
         plt.ylabel('Count', fontsize=12)
         plt.xticks(range(len(value_counts)), value_counts.index, rotation=45, ha='right')
@@ -352,7 +488,7 @@ def bar_plot_tool(file_path: str, column_name: str, top_n: int = 10) -> str:
         plot_dir = create_plot_directory()
         filepath = save_plot(plt.gcf(), f"bar_plot_{column_name}", plot_dir)
         
-        return f"✅ **Bar plot created successfully!**\n\n**File saved as:** {filepath}\n\n**Plot shows:**\n- Top {top_n} most frequent values in {column_name}\n- Total unique values: {df[column_name].nunique()}\n- Missing values: {df[column_name].isnull().sum():,}"
+        return f"✅ **Bar plot created successfully!**\n\n**File saved as:** {filepath}\n\n**Plot shows:**\n- Top {len(value_counts)} most frequent values in {column_name}\n- Total unique values: {column_data.nunique()}\n- Missing values: {df[column_name].isnull().sum():,}"
         
     except Exception as e:
         return f"❌ **Error creating bar plot**: {e}"

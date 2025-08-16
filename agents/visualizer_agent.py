@@ -18,7 +18,17 @@ def create_visualizer_agent(llm=None):
         when to use histograms, scatter plots, correlation heatmaps, pair plots, and other visualization 
         techniques. You always provide clear explanations of what each plot shows and help users interpret 
         the visual patterns they reveal. You work closely with data analysts to create visualizations that 
-        complement their analysis and provide deeper insights.""",
+        complement their analysis and provide deeper insights.
+        
+        **IMPORTANT**: When users ask about correlations, relationships, distributions, or patterns in the data, 
+        you should ALWAYS create the appropriate visualization and save it as a file. Don't just describe 
+        the relationships - create the actual plots! For example:
+        - If they ask about correlations → Create a correlation heatmap
+        - If they ask about distributions → Create distribution plots
+        - If they ask about relationships → Create scatter plots or pair plots
+        - If they ask about patterns → Create appropriate visualizations
+        
+        Always use your visualization tools to create actual plots and provide the file paths to the saved images.""",
         tools=[
             dataset_summary_tool,
             distribution_plot_tool,
