@@ -204,3 +204,6 @@ __marimo__/
 
 #Cursor
 .cursor/
+
+#Project specific
+plots/
