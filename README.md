@@ -6,6 +6,7 @@ A flexible data analysis system using chat-based approaches for dataset analysis
 
 - **Chat-Based Analysis**: Dynamic analysis based on user queries
 - **Interactive Chat**: Real-time conversation with the data analysis agent
+- **Data Visualization**: Create insightful plots and charts
 - **Markdown Output**: Well-formatted, readable analysis results
 - **Multiple Dataset Support**: Works with CSV and Parquet files
 - **Column Analysis**: Detailed analysis of unique values and their distributions
@@ -42,6 +43,36 @@ poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "What are the uniq
 poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "Show me the unique values and their percentages for the SEX column"
 poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "Analyze the AGE column and show me the distribution of values"
 ```
+
+### 2. Data Visualization
+
+The system includes a dedicated visualization agent that can create various types of plots and visualizations. You can request visualizations through the interactive chat:
+
+#### Through Interactive Chat
+
+```bash
+# Start interactive chat
+poetry run python main.py
+```
+
+Then ask for visualizations like:
+- "Create a correlation heatmap for all numerical columns"
+- "Show me the distribution of the AGE column"
+- "Create a scatter plot between AGE and INCOME"
+- "Make a pair plot for the numerical columns"
+- "Create a bar plot showing the top 10 categories"
+- "Generate a comprehensive visualization of the dataset"
+
+#### Available Visualization Types
+
+1. **Distribution Plots**: Histograms and box plots for understanding data distributions
+2. **Correlation Heatmaps**: Visualize relationships between numerical variables
+3. **Pair Plots**: Scatter plot matrices showing all pairwise relationships
+4. **Scatter Plots**: Analyze relationships between two specific variables
+5. **Bar Plots**: Visualize categorical data and frequency distributions
+6. **Comprehensive Analysis**: Multiple plots for complete dataset overview
+
+All plots are automatically saved to the `plots/` directory with timestamps.
 
 ### 3. Interactive Chat Mode
 
@@ -86,17 +117,34 @@ poetry run python test_refactored_tools.py
   - Top values ranking
 - **Usage**: Automatically used when asking about specific column values
 
+### 3. Visualization Tools
+- **Purpose**: Create insightful plots and charts for data analysis
+- **Features**:
+  - Distribution plots (histograms, box plots)
+  - Correlation heatmaps
+  - Pair plots (scatter plot matrices)
+  - Scatter plots with trend lines
+  - Bar plots for categorical data
+  - Comprehensive visualization analysis
+- **Usage**: Available through interactive chat - the system intelligently selects the right agent for visualization tasks
+
 ## Architecture
 
 ### Components
 
-- **Agents**: `agents/data_agent.py` - Data analysis assistant
-- **Tasks**: `tasks/data_tasks.py` - Task definitions for both approaches
+- **Agents**: 
+  - `agents/data_agent.py` - Data analysis assistant
+  - `agents/visualizer_agent.py` - Data visualization specialist
+- **Tasks**: 
+  - `tasks/data_tasks.py` - Task definitions for data analysis
+  - `tasks/visualization_tasks.py` - Task definitions for visualization
 - **Tools**: 
   - `tools/dataset_summary.py` - Dataset analysis tools
   - `tools/column_analysis.py` - Column-specific analysis tools
+  - `tools/visualization.py` - Data visualization tools
   - `tools/utils.py` - Shared utilities for data handling
-- **Chat**: `main.py` - Chat-based analysis interface
+- **Main**: `main.py` - Chat-based analysis and visualization functions
+
 
 ### Key Improvements
 
@@ -127,6 +175,7 @@ Benefits:
 
 Here are some example queries you can try:
 
+### Data Analysis Queries
 - **General Analysis**: "Give me a comprehensive overview of this dataset"
 - **Data Quality**: "Are there any missing values or data quality issues?"
 - **Structure**: "What are the column names and their data types?"
@@ -135,6 +184,15 @@ Here are some example queries you can try:
 - **Column Analysis**: "Show me the unique values and their percentages for the SEX column"
 - **Distribution**: "Analyze the AGE column and show me the distribution of values"
 - **Patterns**: "What patterns do you see in the data?"
+
+### Visualization Queries
+- **Correlation Analysis**: "Create a correlation heatmap for all numerical columns"
+- **Distribution Visualization**: "Show me the distribution of the AGE column with a plot"
+- **Relationship Analysis**: "Create a scatter plot between AGE and INCOME"
+- **Multi-variable Analysis**: "Make a pair plot for the numerical columns"
+- **Categorical Analysis**: "Create a bar plot showing the top 10 categories"
+- **Comprehensive Visualization**: "Generate a comprehensive visualization of the dataset"
+- **Custom Plots**: "Create a scatter plot of AGE vs INCOME colored by SEX"
 
 ## Configuration
 
@@ -145,19 +203,21 @@ The system uses Ollama with the `qwen3:8b` model by default. You can modify the 
 ```
 data-analyser/
 ├── agents/
-│   └── data_agent.py          # Data analysis agent
+│   ├── data_agent.py          # Data analysis agent
+│   └── visualizer_agent.py    # Data visualization specialist
 ├── tasks/
-│   └── data_tasks.py          # Task definitions
+│   ├── data_tasks.py          # Task definitions for data analysis
+│   └── visualization_tasks.py # Task definitions for visualization
 ├── tools/
 │   ├── dataset_summary.py     # Dataset analysis tools
 │   ├── column_analysis.py     # Column analysis tools
+│   ├── visualization.py       # Data visualization tools
 │   └── utils.py              # Shared utilities
 ├── dataset/
 │   └── DD_EEC_ANNUEL_2024_data.csv
-├── main.py              # Chat-based analysis
-├── main.py                   # Main entry point
+├── plots/                    # Generated visualization files
+├── main.py                   # Main entry point with analysis and visualization
 ├── tests/
-│   └── *.py          # Test scripts
-├── test_column_analysis.py   # Column analysis test
+│   └── *.py                  # Test scripts
 └── README.md                 # This file
 ``` 
