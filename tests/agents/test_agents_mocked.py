@@ -7,6 +7,7 @@ This avoids calling real LLMs and makes tests fast and reliable
 import pytest
 from unittest.mock import Mock, patch
 from agents.data_agent import create_data_agent
+from agents.visualizer_agent import create_visualizer_agent
 from main import analyze_dataset_chat, setup_crew
 
 
@@ -28,7 +29,7 @@ def test_create_data_agent(mock_agent_class, mock_llm):
     call_args = mock_agent_class.call_args
     assert call_args[1]['role'] == 'Data Analysis Assistant'
     assert 'data analyst' in call_args[1]['backstory'].lower()
-    assert len(call_args[1]['tools']) == 5  # dataset_summary_tool, column_unique_values_tool, and 3 statistical tools
+    assert len(call_args[1]['tools']) == 5  # dataset_summary_tool, column_unique_values_tool, and 3 statistical tools (no visualization tools)
     assert call_args[1]['verbose'] is True
     assert call_args[1]['allow_delegation'] is False
     assert call_args[1]['memory'] is True
@@ -46,10 +47,13 @@ def test_analyze_dataset_chat_success(mock_task_class, mock_llm_class, mock_crew
     mock_llm_instance.llm_type = "mock"
     mock_llm_class.return_value = mock_llm_instance
     
-    # Mock Agent (this will be called by create_data_agent)
-    with patch('agents.data_agent.Agent') as mock_agent_class:
-        mock_agent_instance = Mock()
-        mock_agent_class.return_value = mock_agent_instance
+    # Mock Agents (this will be called by create_data_agent and create_visualizer_agent)
+    with patch('agents.data_agent.Agent') as mock_data_agent_class, \
+         patch('agents.visualizer_agent.Agent') as mock_visualizer_agent_class:
+        mock_data_agent_instance = Mock()
+        mock_visualizer_agent_instance = Mock()
+        mock_data_agent_class.return_value = mock_data_agent_instance
+        mock_visualizer_agent_class.return_value = mock_visualizer_agent_instance
         
         # Mock Task
         mock_task_instance = Mock()
@@ -81,10 +85,13 @@ def test_analyze_dataset_chat_error_handling(mock_task_class, mock_llm_class, mo
     mock_llm_instance.llm_type = "mock"
     mock_llm_class.return_value = mock_llm_instance
     
-    # Mock Agent
-    with patch('agents.data_agent.Agent') as mock_agent_class:
-        mock_agent_instance = Mock()
-        mock_agent_class.return_value = mock_agent_instance
+    # Mock Agents
+    with patch('agents.data_agent.Agent') as mock_data_agent_class, \
+         patch('agents.visualizer_agent.Agent') as mock_visualizer_agent_class:
+        mock_data_agent_instance = Mock()
+        mock_visualizer_agent_instance = Mock()
+        mock_data_agent_class.return_value = mock_data_agent_instance
+        mock_visualizer_agent_class.return_value = mock_visualizer_agent_instance
         
         # Mock Task
         mock_task_instance = Mock()
@@ -127,31 +134,36 @@ def test_column_analysis_tool_integration(mock_column_analysis_tool):
 
 
 @pytest.mark.unit
+@patch('agents.visualizer_agent.Agent')
 @patch('agents.data_agent.Agent')
 @patch('main.LLM')
-def test_setup_crew_returns_correct_components(mock_llm_class, mock_agent_class):
+def test_setup_crew_returns_correct_components(mock_llm_class, mock_data_agent_class, mock_visualizer_agent_class):
     """Test that setup_crew returns expected components"""
     # Arrange
     mock_llm_instance = Mock()
     mock_llm_instance.supports_stop_words.return_value = True
     mock_llm_instance.llm_type = "mock"
     mock_llm_class.return_value = mock_llm_instance
-    mock_agent = Mock()
-    mock_agent_class.return_value = mock_agent
+    mock_data_agent = Mock()
+    mock_visualizer_agent = Mock()
+    mock_data_agent_class.return_value = mock_data_agent
+    mock_visualizer_agent_class.return_value = mock_visualizer_agent
     
     # Act
-    llm, agent = setup_crew()
+    llm, data_agent, visualizer_agent = setup_crew()
     
     # Assert
-    # The setup_crew function should return the LLM instance
+    # The setup_crew function should return the LLM instance and both agents
     assert llm == mock_llm_instance
-    assert agent == mock_agent
+    assert data_agent == mock_data_agent
+    assert visualizer_agent == mock_visualizer_agent
     # Verify that LLM was called with correct parameters
     mock_llm_class.assert_called_once_with(
         model="ollama/qwen3:8b",
         base_url="http://localhost:11434"
     )
-    mock_agent_class.assert_called_once()
+    mock_data_agent_class.assert_called_once()
+    mock_visualizer_agent_class.assert_called_once()
 
 
 @pytest.mark.integration
@@ -172,10 +184,13 @@ def test_mocked_successful_analysis(mock_task_class, mock_llm_class, mock_crew_c
     mock_llm_instance.llm_type = "mock"
     mock_llm_class.return_value = mock_llm_instance
     
-    # Mock Agent
-    with patch('agents.data_agent.Agent') as mock_agent_class:
-        mock_agent_instance = Mock()
-        mock_agent_class.return_value = mock_agent_instance
+    # Mock Agents
+    with patch('agents.data_agent.Agent') as mock_data_agent_class, \
+         patch('agents.visualizer_agent.Agent') as mock_visualizer_agent_class:
+        mock_data_agent_instance = Mock()
+        mock_visualizer_agent_instance = Mock()
+        mock_data_agent_class.return_value = mock_data_agent_instance
+        mock_visualizer_agent_class.return_value = mock_visualizer_agent_instance
         
         # Mock Task
         mock_task_instance = Mock()
@@ -212,10 +227,13 @@ def test_mocked_error_responses(mock_task_class, mock_llm_class, mock_crew_class
     mock_llm_instance.llm_type = "mock"
     mock_llm_class.return_value = mock_llm_instance
     
-    # Mock Agent
-    with patch('agents.data_agent.Agent') as mock_agent_class:
-        mock_agent_instance = Mock()
-        mock_agent_class.return_value = mock_agent_instance
+    # Mock Agents
+    with patch('agents.data_agent.Agent') as mock_data_agent_class, \
+         patch('agents.visualizer_agent.Agent') as mock_visualizer_agent_class:
+        mock_data_agent_instance = Mock()
+        mock_visualizer_agent_instance = Mock()
+        mock_data_agent_class.return_value = mock_data_agent_instance
+        mock_visualizer_agent_class.return_value = mock_visualizer_agent_instance
         
         # Mock Task
         mock_task_instance = Mock()
@@ -245,10 +263,13 @@ def test_integration_with_fixtures(mock_task_class, mock_llm_class, mock_crew_cl
     mock_llm_instance.llm_type = "mock"
     mock_llm_class.return_value = mock_llm_instance
     
-    # Mock Agent
-    with patch('agents.data_agent.Agent') as mock_agent_class:
-        mock_agent_instance = Mock()
-        mock_agent_class.return_value = mock_agent_instance
+    # Mock Agents
+    with patch('agents.data_agent.Agent') as mock_data_agent_class, \
+         patch('agents.visualizer_agent.Agent') as mock_visualizer_agent_class:
+        mock_data_agent_instance = Mock()
+        mock_visualizer_agent_instance = Mock()
+        mock_data_agent_class.return_value = mock_data_agent_instance
+        mock_visualizer_agent_class.return_value = mock_visualizer_agent_instance
         
         # Mock Task
         mock_task_instance = Mock()
@@ -265,3 +286,27 @@ def test_integration_with_fixtures(mock_task_class, mock_llm_class, mock_crew_cl
         # Assert
         assert result == "Integration test result"
         mock_crew_instance.kickoff.assert_called_once()
+
+
+@pytest.mark.unit
+@patch('agents.visualizer_agent.Agent')
+def test_create_visualizer_agent(mock_agent_class, mock_llm):
+    """Test that visualizer agent is created with correct configuration"""
+    # Arrange
+    mock_llm_instance = Mock()
+    mock_llm.return_value = mock_llm_instance
+    mock_agent = Mock()
+    mock_agent_class.return_value = mock_agent
+    
+    # Act
+    agent = create_visualizer_agent(llm=mock_llm_instance)
+    
+    # Assert
+    mock_agent_class.assert_called_once()
+    call_args = mock_agent_class.call_args
+    assert call_args[1]['role'] == 'Data Visualization Specialist'
+    assert 'visualization' in call_args[1]['backstory'].lower()
+    assert len(call_args[1]['tools']) == 6  # dataset_summary_tool + 5 visualization tools
+    assert call_args[1]['verbose'] is True
+    assert call_args[1]['allow_delegation'] is True
+    assert call_args[1]['memory'] is True

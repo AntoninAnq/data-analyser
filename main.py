@@ -1,36 +1,39 @@
 from crewai import Crew, LLM
 from agents.data_agent import create_data_agent
+from agents.visualizer_agent import create_visualizer_agent
 from tasks.data_tasks import create_chat_data_task
 
+
 def setup_crew():
-    """Setup the crew with LLM and agent"""
+    """Setup the crew with LLM and agents"""
     # Configure Ollama LLM
     llm = LLM(
         model="ollama/qwen3:8b",
         base_url="http://localhost:11434"
     )
     
-    # Create agent
+    # Create agents
     data_agent = create_data_agent(llm=llm)
+    visualizer_agent = create_visualizer_agent(llm=llm)
     
-    return llm, data_agent
+    return llm, data_agent, visualizer_agent
 
 def analyze_dataset_chat(user_query: str, file_path: str = "dataset/DD_EEC_ANNUEL_2024_data.csv"):
     """
-    Analyze a dataset using a chat-based approach.
+    Analyze a dataset using a chat-based approach with multi-agent crew.
     
     Args:
         user_query: The user's specific question about the dataset
         file_path: Path to the dataset file
     """
-    llm, data_agent = setup_crew()
+    llm, data_agent, visualizer_agent = setup_crew()
     
     # Create dynamic task based on user query
     chat_task = create_chat_data_task(data_agent, user_query, file_path)
     
-    # Create crew with single task
+    # Create crew with both agents - they can collaborate and delegate tasks
     crew = Crew(
-        agents=[data_agent],
+        agents=[data_agent, visualizer_agent],
         tasks=[chat_task],
         llm=llm,
         verbose=True
@@ -81,5 +84,10 @@ if __name__ == "__main__":
     print(result2)
     print("\n" + "="*50 + "\n")
     
-    print("Example 3: Interactive mode")
+    print("Example 3: Visualization request")
+    result3 = analyze_dataset_chat("Create a correlation heatmap for all numerical columns")
+    print(result3)
+    print("\n" + "="*50 + "\n")
+    
+    print("Example 4: Interactive mode")
     interactive_chat() 
