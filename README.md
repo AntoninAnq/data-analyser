@@ -28,20 +28,26 @@ ollama run qwen3:8b
 
 ### 1. Chat-Based Analysis 
 
-Ask specific questions about your dataset:
+Ask specific questions about your dataset through Interactive Chat :
 
 ```bash
+# Start interactive chat
+poetry run python main.py
+```
+it use defaut dataset 'dataset/DD_EEC_ANNUEL_2024_data.csv'
+Then ask for example :
+```bash
 # General overview
-poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "Give me a general overview of this dataset"
+"Give me a general overview of this dataset"
 
 # Specific questions
-poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "What are the data types of the columns?"
-poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "How many missing values are there?"
-poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "What are the unique values in the EEC_MEASURE column?"
+"What are the data types of the columns?"
+"How many missing values are there?"
+"What are the unique values in the EEC_MEASURE column?"
 
 # Column analysis
-poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "Show me the unique values and their percentages for the SEX column"
-poetry run python main.py dataset/DD_EEC_ANNUEL_2024_data.csv "Analyze the AGE column and show me the distribution of values"
+"Show me the unique values and their percentages for the SEX column"
+"Analyze the AGE column and show me the distribution of values"
 ```
 
 ### 2. Data Visualization
@@ -95,9 +101,7 @@ Then ask questions like:
 Run tests to verify functionality:
 
 ```bash
-poetry run python tests/test_chat.py
-poetry run python test_column_analysis.py
-poetry run python test_refactored_tools.py
+poetry run pytest tests/
 ```
 
 ## Available Tools
@@ -146,17 +150,6 @@ poetry run python test_refactored_tools.py
 - **Main**: `main.py` - Chat-based analysis and visualization functions
 
 
-### Key Improvements
-
-1. **Flexible Query System**: Ask any question about your dataset
-2. **Markdown Output**: Better formatted, readable results
-3. **Semicolon CSV Support**: Properly handles European CSV format
-4. **Memory**: Agent remembers previous interactions
-5. **Error Handling**: Robust error handling and user feedback
-6. **Column Analysis**: Dedicated tool for detailed column analysis
-7. **Modular Design**: Shared utilities for consistent data handling
-8. **Code Reusability**: Eliminated code duplication between tools
-
 ### Shared Utilities (`tools/utils.py`)
 
 The refactored system now includes shared utilities:
@@ -165,11 +158,6 @@ The refactored system now includes shared utilities:
 - **`validate_column_exists()`**: Column validation with helpful error messages
 - **`get_dataset_info()`**: Consistent dataset information extraction
 
-Benefits:
-- **Consistency**: All tools use the same data loading logic
-- **Maintainability**: Changes to data handling only need to be made in one place
-- **Error Handling**: Centralized error handling for file operations
-- **Extensibility**: Easy to add new tools that use the same utilities
 
 ## Example Queries
 
@@ -196,7 +184,7 @@ Here are some example queries you can try:
 
 ## Configuration
 
-The system uses Ollama with the `qwen3:8b` model by default. You can modify the LLM configuration in `crew.py` and `chat_main.py` if needed.
+The system uses Ollama with the `qwen3:8b` model by default. You can modify the LLM configuration in `main.py` if needed.
 
 ## File Structure
 
