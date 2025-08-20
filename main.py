@@ -1,6 +1,7 @@
 from crewai import Crew, LLM, Process
 from agents.data_agent import create_data_agent
 from agents.visualizer_agent import create_visualizer_agent
+from agents.cleaning_agent import create_cleaning_agent
 from tasks.data_tasks import create_chat_data_task
 
 
@@ -15,8 +16,9 @@ def setup_crew():
     # Create agents
     data_agent = create_data_agent(llm=llm)
     visualizer_agent = create_visualizer_agent(llm=llm)
+    cleaning_agent = create_cleaning_agent(llm=llm)
     
-    return llm, data_agent, visualizer_agent
+    return llm, data_agent, visualizer_agent, cleaning_agent
 
 def analyze_dataset_chat(user_query: str, file_path: str = "dataset/DD_EEC_ANNUEL_2024_data.csv"):
     """
@@ -26,15 +28,16 @@ def analyze_dataset_chat(user_query: str, file_path: str = "dataset/DD_EEC_ANNUE
         user_query: The user's specific question about the dataset
         file_path: Path to the dataset file
     """
-    llm, data_agent, visualizer_agent = setup_crew()
+    llm, data_agent, visualizer_agent, cleaning_agent = setup_crew()
     
     # Create dynamic task based on user query
     # The task can be delegated to either agent based on the content
     chat_task = create_chat_data_task(data_agent, user_query, file_path)
     
-    # Create crew with both agents - they can collaborate and delegate tasks
+    # Create crew with all agents - they can collaborate and delegate tasks
+    # The cleaning agent can be called when data quality issues are detected
     crew = Crew(
-        agents=[data_agent, visualizer_agent],
+        agents=[data_agent, visualizer_agent, cleaning_agent],
         tasks=[chat_task],
         llm=llm,
         verbose=True,
@@ -91,5 +94,5 @@ if __name__ == "__main__":
     # print(result3)
     # print("\n" + "="*50 + "\n")
     
-    print("Example 4: Interactive mode")
+    print("Interactive mode")
     interactive_chat() 
